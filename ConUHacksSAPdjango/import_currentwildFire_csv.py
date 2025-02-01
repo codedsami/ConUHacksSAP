@@ -5,9 +5,12 @@ import pandas as pd
 from datetime import datetime
 from backend.models import CurrentFireEvents
 
+
 # Set the Django settings module to the correct settings file
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ConUHacksSAPdjango.settings')
 print(f"DJANGO_SETTINGS_MODULE is set to: {os.getenv('DJANGO_SETTINGS_MODULE')}")
+
+
 
 # Initialize Django
 try:
