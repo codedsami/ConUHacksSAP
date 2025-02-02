@@ -6,6 +6,6 @@ urlpatterns = [
         path('fire_events/', views.get_fire_events, name='get_fire_events'),
         path('resources/', views.get_resources, name='get_resources'),
         path('predict/', views.get_predicted_fire_events, name='get_predicted_fire_events'),
-        path('upload/fire_events/', views.upload_fire_events, name='upload_fire_events'),
-        path('allocate/resources/', views.upload_resources, name='upload_resources'),
+        path('upload/current_fire_events/', views.upload_current_fire_events, name='upload_fire_events'),
+        path('upload/historical_fire_events/', views.upload_historical_fire_events, name='upload_historical_fire_events'),
 ]
