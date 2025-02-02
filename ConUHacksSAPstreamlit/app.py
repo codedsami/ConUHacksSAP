@@ -1,10 +1,12 @@
+# Import streamlit first
 import streamlit as st
+
+# Set Streamlit page to wide layout (Full screen map) - this must be first
+st.set_page_config(page_title="SAP Wildfire Management", layout="wide")
+
 import home
 import part1
 import part2
-
-# Set up page configuration
-st.set_page_config(page_title="SAP Wildfire Management", layout="wide")
 
 # Initialize session state for page navigation
 if "page" not in st.session_state:
