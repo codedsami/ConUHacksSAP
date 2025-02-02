@@ -31,6 +31,34 @@ def get_fire_events(request):
     serializer = FireEventSerializer(fire_events, many=True)
     return Response(serializer.data)
 
+# API view to upload fire events from a CSV file
+@api_view(['POST'])
+def upload_fire_events(request):
+    """
+    Upload fire events from a CSV file
+    """
+    # Before parsing the CSV file, delete all existing fire events
+    CurrentFireEvents.objects.all().delete()
+
+    # Parse the file
+    file = request.data['file']
+    if not file.name.endswith('.csv'):
+        return Response({'error': 'File is not a CSV file'}, status=400)
+    data_set = file.read().decode('UTF-8')
+    print(file)
+    io_string = io.StringIO(data_set)
+    next(io_string)
+    for column in csv.reader(io_string, delimiter=',', quotechar="|"):
+        _, created = CurrentFireEvents.objects.update_or_create(
+            timestamp=column[0],
+            fire_start_time=column[1],
+            latitude=column[2],
+            longitude=column[3],
+            severity=column[4]
+        )
+    return Response({'message': 'Fire events uploaded successfully'}, status=201)
+
+
 # API view to get all resources in JSON format
 @api_view(['GET'])
 def get_resources(request):
@@ -40,6 +68,26 @@ def get_resources(request):
     resources = Resource.objects.all()
     serializer = ResourceSerializer(resources, many=True)
     return Response(serializer.data)
+
+# API view to upload resources from a json request
+@api_view(['POST'])
+def upload_resources(request):
+    """
+    Upload resources from a JSON request
+    """
+    # Before parsing the JSON file, delete all existing resources
+    Resource.objects.all().delete()
+    # Parse the JSON file
+    data = request.data
+    for key, record in data.items():
+        Resource.objects.create(
+            name=record['name'],
+            deployment_time_hr=record['deployment_time_hr'],
+            cost_per_operation=record['cost_per_operation'],
+            units_available=record['units_available']
+        )
+    return Response({'message': 'Resources uploaded successfully'}, status=201)
+
 
 @api_view(['GET'])
 def optimize_resources(request):
