@@ -2,7 +2,12 @@ from django.shortcuts import render
 from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from backend.algorithms import GREEDY_COST, optimize
 from .models import CurrentFireEvents, Resource
+from rest_framework.parsers import FileUploadParser
+import csv
+import io
 
 # Serializer for FireEvent model
 class FireEventSerializer(serializers.ModelSerializer):
@@ -36,19 +41,22 @@ def get_resources(request):
     serializer = ResourceSerializer(resources, many=True)
     return Response(serializer.data)
 
-# Non-API view to optimize resources for fire events
+@api_view(['GET'])
 def optimize_resources(request):
-    # Fetch all wildfires sorted by severity and start time
-    wildfires = CurrentFireEvents.objects.all()
+    """
+    Optimize resources for fire events
+    """
+    # Fetch all fire events from the database
+    fire_events = CurrentFireEvents.objects.all()
 
+    # Define algorithm
+    algorithm = request.query_params.get('algo', GREEDY_COST)
+
+    return Response(generateReport(fire_events, algorithm))
+
+def generateReport(wildfires, algorithm):
     # Define resources
-    resources = {
-        'Smoke Jumpers': {'time': 30, 'cost': 5000, 'units': 5},
-        'Fire Engines': {'time': 60, 'cost': 2000, 'units': 10},
-        'Helicopters': {'time': 45, 'cost': 8000, 'units': 3},
-        'Tanker Planes': {'time': 120, 'cost': 15000, 'units': 2},
-        'Ground Crews': {'time': 90, 'cost': 3000, 'units': 8},
-    }
+    resources = Resource.objects.all()
 
     # Track deployed resources and missed fires
     deployed = []
@@ -56,23 +64,7 @@ def optimize_resources(request):
     operational_cost = 0
     damage_cost = 0
 
-    for fire in wildfires:
-        assigned = False
-        for resource, details in resources.items():
-            if details['units'] > 0:
-                deployed.append((fire, resource))
-                operational_cost += details['cost']
-                details['units'] -= 1
-                assigned = True
-                break
-        if not assigned:
-            missed.append(fire)
-            if fire.severity == 'low':
-                damage_cost += 50000
-            elif fire.severity == 'medium':
-                damage_cost += 100000
-            elif fire.severity == 'high':
-                damage_cost += 200000
+    deployed, missed, operational_cost, damage_cost = optimize(wildfires, resources, algorithm)
 
     # Generate report
     report = {
@@ -84,7 +76,25 @@ def optimize_resources(request):
             'low': CurrentFireEvents.objects.filter(severity='low').count(),
             'medium': CurrentFireEvents.objects.filter(severity='medium').count(),
             'high': CurrentFireEvents.objects.filter(severity='high').count(),
-        }
+        },
+        'deployed_resources_details': [
+            {
+            'resource_name': resource.name,
+            'deployed_time': resource.assigned_time,
+            'location': {
+                'latitude': event.latitude,
+                'longitude': event.longitude
+            }
+            } for event, resource in deployed
+        ],
+        'missed_fires_details': [
+            {
+            'severity': event.severity,
+            'location': {
+                'latitude': event.latitude,
+                'longitude': event.longitude
+            }
+            } for event in missed
+        ]
     }
-
-    return render(request, 'report.html', {'report': report})
+    return report

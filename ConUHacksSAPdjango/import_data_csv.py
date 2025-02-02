@@ -14,10 +14,10 @@ client = MongoClient(uri)
 
 # Specify Database and Collection
 db = client['mydatabase']
-collection = db['backend_futureenvironmentaldata']
+collection = db['backend_resource']
 
 # Specify CSV file to import
-csv_file = 'future_environmental_data.csv'
+csv_file = 'resources.csv'
 df = pd.read_csv(csv_file, sep=',')
 
 # Convert DataFrame to dictionary format for MongoDB
