@@ -18,7 +18,68 @@ gc = {"name": "Ground Crews", "deployment_time_hr": 1.5, "cost": 3000}
 
 def show():
     st.title("🔥 Wildfire Tracker")
-    # # add file uploader .csv
+
+    display_map()
+
+    
+
+
+def display_map():
+    if 'optimized' not in st.session_state:
+        st.session_state.optimized = requests.get(optimize_url).json()
+    optimized = st.session_state.optimized
+
+    m = folium.Map(location=[45.7747, -73.3052], zoom_start=8)
+    # Show information about the optimization
+     # Show information about the optimization
+    st.write(f"**Optimization Results**")
+    st.write(f"**Number of fires addressed:** {optimized['addressed']}")
+    st.write(f"**Number of fires missed:** {optimized['missed']}")
+    st.write(f"**Total operational cost:** ${optimized['operational_cost']}")
+    st.write(f"**Total damage cost:** ${optimized['damage_cost']}")
+    st.write(f"**Severity Report:**")
+    st.write(f"- Low severity fires: {optimized['severity_report']['low']}")
+    st.write(f"- Medium severity fires: {optimized['severity_report']['medium']}")
+    st.write(f"- High severity fires: {optimized['severity_report']['high']}")
+
+
+
+
+
+    deployed_resources = optimized.get("deployed_resources_details", [])
+    for resource in deployed_resources:
+        location = [resource["location"]["latitude"], resource["location"]["longitude"]]
+        deployed_time = datetime.strptime(resource["deployed_time"], "%Y-%m-%d %H:%M")
+        folium.Marker(
+            location=location,
+            popup=f"""
+            <table>
+            <tr><td><b>Resource:</b></td><td>{resource['resource_name']}</td></tr>
+            <tr><td><b>Deployed Time:</b></td><td>{deployed_time}</td></tr>
+            </table>
+            """,
+            icon=folium.Icon(color="green", icon="info-sign")
+        ).add_to(m)
+    
+    missed_fires = optimized.get("missed_fires", [])
+    for fire in missed_fires:
+        location = [fire["latitude"], fire["longitude"]]
+        folium.Marker(
+            location=location,
+            popup=f"""
+            <table>
+            <tr><td><b>Estimated Start:</b></td><td>{fire['fire_start_time']}</td></tr>
+            <tr><td><b>Severity:</b></td><td>{fire['severity'].upper()}</td></tr>
+            </table>
+            """,
+            icon=folium.Icon(color="red", icon="info-sign")
+        ).add_to(m)
+
+    # **🔥 Step 6: Render the Full-Screen Map**
+    st_folium(m, width=1000, height=500)
+
+
+        # # add file uploader .csv
     # st.write("Upload a CSV file with wildfire data")
     # uploaded_file = st.file_uploader("Choose a file")
     # # save it temporarily for later use
@@ -58,30 +119,9 @@ def show():
     #     #     response = requests.post(save_resources_url, json=gc)
     #     st.write("Resources allocated successfully")
     #     # once resources are allocated, show the map and hide everything else
-    display_map()
-
-    
 
 
-def display_map():
-    if 'optimized' not in st.session_state:
-        st.session_state.optimized = requests.get(optimize_url).json()
-    optimized = st.session_state.optimized
-
-    m = folium.Map(location=[45.7747, -73.3052], zoom_start=8)
-    # Show information about the optimization
-    st.write(f"**Optimization Results**")
-    st.write(f"**Number of fires addressed:** {optimized['addressed']}")
-    st.write(f"**Number of fires missed:** {optimized['missed']}")
-    st.write(f"**Total operational cost:** ${optimized['operational_cost']}")
-    st.write(f"**Total damage cost:** ${optimized['damage_cost']}")
-    st.write(f"**Severity Report:**")
-    st.write(f"- Low severity fires: {optimized['severity_report']['low']}")
-    st.write(f"- Medium severity fires: {optimized['severity_report']['medium']}")
-    st.write(f"- High severity fires: {optimized['severity_report']['high']}")
-
-
-    # **🔥 Step 5: Loop Through Fire Events and Display Correct Markers**
+        # **🔥 Step 5: Loop Through Fire Events and Display Correct Markers**
     # for fire in fire_events:
     #     fire_time = datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M")
     #     reported_time = datetime.strptime(fire["timestamp"], "%Y-%m-%d %H:%M") if fire.get("timestamp") else None
@@ -100,35 +140,3 @@ def display_map():
     #         """,
     #         icon=folium.Icon(color=color, icon="info-sign")
     #     ).add_to(m)
-
-    deployed_resources = optimized.get("deployed_resources_details", [])
-    for resource in deployed_resources:
-        location = [resource["location"]["latitude"], resource["location"]["longitude"]]
-        deployed_time = datetime.strptime(resource["deployed_time"], "%Y-%m-%d %H:%M")
-        folium.Marker(
-            location=location,
-            popup=f"""
-            <table>
-            <tr><td><b>Resource:</b></td><td>{resource['resource_name']}</td></tr>
-            <tr><td><b>Deployed Time:</b></td><td>{deployed_time}</td></tr>
-            </table>
-            """,
-            icon=folium.Icon(color="green", icon="info-sign")
-        ).add_to(m)
-    
-    missed_fires = optimized.get("missed_fires", [])
-    for fire in missed_fires:
-        location = [fire["latitude"], fire["longitude"]]
-        folium.Marker(
-            location=location,
-            popup=f"""
-            <table>
-            <tr><td><b>Estimated Start:</b></td><td>{fire['fire_start_time']}</td></tr>
-            <tr><td><b>Severity:</b></td><td>{fire['severity'].upper()}</td></tr>
-            </table>
-            """,
-            icon=folium.Icon(color="red", icon="info-sign")
-        ).add_to(m)
-
-    # **🔥 Step 6: Render the Full-Screen Map**
-    st_folium(m, width=1000, height=500)
