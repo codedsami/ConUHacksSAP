@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 import joblib
 import matplotlib.pyplot as plt
 from sklearn.tree import plot_tree
@@ -57,10 +57,20 @@ grid_search.fit(X_train, y_train)
 # Get the best model
 best_model = grid_search.best_estimator_
 
-# Step 6: Evaluate the Model
+# Step 6: Evaluate the Model (On the Test Set)
 y_pred = best_model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+# Print evaluation metrics for the test set
 print(f'Accuracy: {accuracy}')
+print(f'Precision: {precision}')
+print(f'Recall: {recall}')
+print(f'F1 Score: {f1}')
+
+# Classification Report (detailed precision, recall, F1)
 print(classification_report(y_test, y_pred))
 
 # Step 7: Visualize One of the Decision Trees (Optional)
@@ -78,7 +88,7 @@ joblib.dump(best_model, 'best_wildfire_model.pkl')
 future_data = pd.read_csv('future_environmental_data.csv')
 
 # Preprocess future data (same steps as historical data)
-future_data['timestamp'] = pd.to_datetime(future_data['timestamp'])  # Ensure the timestamp is in datetime format
+future_data['timestamp'] = pd.to_datetime(future_data['timestamp'])
 
 # Feature Engineering: Extract temporal features for future data
 future_data['hour'] = future_data['timestamp'].dt.hour
@@ -113,7 +123,6 @@ future_data['predicted_fire'] = predicted_fire
 predicted_fire_data = future_data[future_data['predicted_fire'] == 1]
 
 # Step 10: Save the Future Predictions with Location (Only Where Fire is Predicted) to a CSV File
-# Only include rows where predicted_fire is 1
 predicted_fire_data[['timestamp', 'latitude', 'longitude', 'predicted_fire']].to_csv('predicted_wildfire_occurrences_with_location.csv', index=False)
 
 # Optionally display the future predictions along with location
