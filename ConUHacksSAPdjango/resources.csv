@@ -1,0 +1,29 @@
+name,deployment_time_hr,cost_per_operation
+Smoke Jumpers,0.5,5000
+Smoke Jumpers,0.5,5000
+Smoke Jumpers,0.5,5000
+Smoke Jumpers,0.5,5000
+Smoke Jumpers,0.5,5000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Fire Engines,1.0,2000
+Helicopters,0.75,8000
+Helicopters,0.75,8000
+Helicopters,0.75,8000
+Tanker Planes,2.0,15000
+Tanker Planes,2.0,15000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
+Ground Crews,1.5,3000
