@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'backend',
 ]
 
@@ -125,14 +126,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
-# Where Django will collect all static files
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Additional static files directories (optional)
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'backend/static'),
-]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

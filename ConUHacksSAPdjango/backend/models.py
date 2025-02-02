@@ -30,6 +30,15 @@ class CurrentFireEvents(models.Model):
     longitude = models.DecimalField(decimal_places=6, max_digits=10,default=0)
     severity = models.CharField(max_length=10, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
 
+    @property
+    def damage_costs(self):
+        severity_costs = {
+            'low': 50000,
+            'medium': 100000,
+            'high': 200000
+        }
+        return severity_costs.get(self.severity, 0)
+
     def __str__(self):
         return f"Timestamp: {self.timestamp}, Fire Start Time: {self.fire_start_time}, Latitude: {self.latitude}, Longitude: {self.longitude}, Severity: {self.severity}, Damage Costs: {self.damage_costs}"
 
