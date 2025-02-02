@@ -1,2 +1,5 @@
 # ConUHacksSAP
-ConUHacks 25 - SAP Challenge
+ConUHacks IX - SAP Challenge
+
+Zeiad Badawy
+Miskat Mahmud
