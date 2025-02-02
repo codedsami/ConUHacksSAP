@@ -23,7 +23,6 @@ for resource in resources:
     Resource.objects.get_or_create(name=resource["name"], defaults=resource)
 
 
-# Create your models here.
 class CurrentFireEvents(models.Model):
     timestamp = models.DateTimeField()
     fire_start_time = models.DateTimeField()
