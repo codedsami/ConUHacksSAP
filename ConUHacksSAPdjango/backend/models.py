@@ -20,8 +20,7 @@ resources = [
 ]
 
 for resource in resources:
-    Resource.objects.create(**resource)
-
+    Resource.objects.get_or_create(name=resource["name"], defaults=resource)
 
 
 # Create your models here.
@@ -30,11 +29,10 @@ class CurrentFireEvents(models.Model):
     fire_start_time = models.DateTimeField()
     latitude = models.DecimalField(decimal_places=6, max_digits=10, default=0)
     longitude = models.DecimalField(decimal_places=6, max_digits=10,default=0)
-
     severity = models.CharField(max_length=10, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
 
     def __str__(self):
-        return f"{self.timestamp} - {self.severity}"
+        return f"Timestamp: {self.timestamp}, Fire Start Time: {self.fire_start_time}, Latitude: {self.latitude}, Longitude: {self.longitude}, Severity: {self.severity}, Damage Costs: {self.damage_costs}"
 
 class HistoricalEnvironmentalData(models.Model):
     timestamp = models.DateTimeField()
@@ -49,6 +47,7 @@ class HistoricalEnvironmentalData(models.Model):
 
     def __str__(self):
         return f"{self.timestamp} - Temp: {self.temperature}°C, Humidity: {self.humidity}%, Wind Speed: {self.wind_speed} m/s, Precipitation: {self.precipitation} mm, Vegetation Index: {self.vegetation_index}, Human Activity Index: {self.human_activity_index}, Location: ({self.latitude}, {self.longitude})"
+
 
 class HistoricalFireEvents(models.Model):
     timestamp = models.DateTimeField()
