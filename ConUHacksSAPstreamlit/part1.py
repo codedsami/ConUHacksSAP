@@ -1,123 +1,66 @@
 import streamlit as st
 import folium
-import pymongo
-from folium.plugins import TimestampedGeoJson
+import requests
 from datetime import datetime
-import json
+from streamlit_folium import st_folium
 
-# Connect to MongoDB
-client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["wildfire_db"]  # Replace with your database name
-collection = db["wildfires"]  # Replace with your collection name
+# Define the Django backend API URL
+fire_events_url = "http://localhost:8000/api/fire_events/"
 
-# Fetch data from MongoDB
-fires_data = collection.find()
+def show():
+    st.title("🔥 Wildfire Tracker")
 
-# Convert the fetched data into a list
-fire_list = list(fires_data)
+    # **🔥 Step 1: Load Data ONCE (for smooth slider performance)**
+    if "fire_events" not in st.session_state:
+        response = requests.get(fire_events_url)
+        if response.status_code == 200:
+            st.session_state.fire_events = response.json()
+        else:
+            st.error("Failed to fetch fire events data")
+            return
 
-# Function to determine color based on severity
-def severity_color(severity):
-    if severity == "high":
-        return "red"
-    elif severity == "medium":
-        return "orange"
-    else:
-        return "blue"
+    fire_events = st.session_state.fire_events  # Use preloaded data
 
-# Convert the data into a GeoJSON-like format for the map
-geojson_data = {
-    "type": "FeatureCollection",
-    "features": []
-}
+    if not fire_events:
+        st.warning("No fire events found.")
+        return
 
-for fire in fire_list:
-    # Convert fire_start_time to datetime
-    fire_start_time = datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M")
-    
-    feature = {
-        "type": "Feature",
-        "geometry": {
-            "type": "Point",
-            "coordinates": [fire["longitude"], fire["latitude"]],
-        },
-        "properties": {
-            "timestamp": fire_start_time.isoformat(),
-            "severity": fire["severity"],
-            "emoji": "🔥",
-            "fire_start_time": fire_start_time.isoformat(),
-        },
-    }
-    geojson_data["features"].append(feature)
+    # **🔥 Step 2: Extract Fire Start and Reported Times**
+    fire_start_times = [datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M") for fire in fire_events]
+    reported_times = [datetime.strptime(fire["reported_time"], "%Y-%m-%d %H:%M") for fire in fire_events if fire.get("reported_time")]
 
-# Create Streamlit map
-m = folium.Map(location=[45.7747, -73.3052], zoom_start=12)
+    start_time = min(fire_start_times)
+    end_time = max(reported_times) if reported_times else max(fire_start_times)
 
-# Add the fire locations to the map as markers
-for fire in fire_list:
-    severity = fire["severity"]
-    color = severity_color(severity)
+    if start_time == end_time:
+        st.warning("All fire events have the same start and reported time. No valid timeline filtering possible.")
+        return
 
-    folium.Marker(
-        location=[fire["latitude"], fire["longitude"]],
-        popup=f"Fire started at {fire['fire_start_time']} | Severity: {fire['severity']}",
-        icon=folium.Icon(color=color, icon="info-sign"),
-    ).add_to(m)
+    # **🔥 Step 3: Timeline Slider**
+    selected_time = st.slider("Select fire timeline",
+                              min_value=start_time, 
+                              max_value=end_time, 
+                              value=start_time, 
+                              format="YYYY-MM-DD")
 
-# Add TimestampedGeoJson for interactive timeline
-timestamped_geojson = TimestampedGeoJson(
-    geojson_data,
-    period="PT1H",  # 1 hour per timestamp (can be adjusted)
-    add_last_point=True,
-).add_to(m)
+    # **🔥 Step 4: Keep Map Static & Only Update Markers**
+    m = folium.Map(location=[45.7747, -73.3052], zoom_start=6)
 
-# Display map in Streamlit
-st.write("### Wildfire Map Visualization")
-st.map(m)
+    # **🔥 Step 5: Loop Through Fire Events and Display Correct Markers**
+    for fire in fire_events:
+        fire_time = datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M")
+        reported_time = datetime.strptime(fire["reported_time"], "%Y-%m-%d %H:%M") if fire.get("reported_time") else None
+        location = [fire['latitude'], fire['longitude']]
 
-# Time filter slider
-start_time = datetime.strptime(fire_list[0]["fire_start_time"], "%Y-%m-%d %H:%M")
-end_time = datetime.strptime(fire_list[-1]["fire_start_time"], "%Y-%m-%d %H:%M")
-selected_time = st.slider("Select time range", 
-                          min_value=start_time, 
-                          max_value=end_time, 
-                          value=(start_time, end_time), 
-                          format="YYYY-MM-DD HH:mm")
+        if fire_time <= selected_time:
+            # **📍 Show colored pin based on severity**
+            severity = fire["severity"].lower()  # Ensure severity is in lowercase
+            color = {"high": "red", "medium": "orange", "low": "pink"}.get(severity, "blue")
+            folium.Marker(
+                location=location,
+                popup=f"<b>Fire Reported:</b> {reported_time if reported_time else fire['fire_start_time']} <br> Severity: {fire['severity']}",
+                icon=folium.Icon(color=color, icon="info-sign")
+            ).add_to(m)
 
-# Filter the data based on the selected time range
-filtered_fires = [fire for fire in fire_list if selected_time[0] <= datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M") <= selected_time[1]]
-
-# Update the map with filtered data
-filtered_geojson_data = {
-    "type": "FeatureCollection",
-    "features": []
-}
-
-for fire in filtered_fires:
-    fire_start_time = datetime.strptime(fire["fire_start_time"], "%Y-%m-%d %H:%M")
-    
-    feature = {
-        "type": "Feature",
-        "geometry": {
-            "type": "Point",
-            "coordinates": [fire["longitude"], fire["latitude"]],
-        },
-        "properties": {
-            "timestamp": fire_start_time.isoformat(),
-            "severity": fire["severity"],
-            "emoji": "🔥",
-            "fire_start_time": fire_start_time.isoformat(),
-        },
-    }
-    filtered_geojson_data["features"].append(feature)
-
-# Add TimestampedGeoJson for the filtered data
-timestamped_geojson = TimestampedGeoJson(
-    filtered_geojson_data,
-    period="PT1H",
-    add_last_point=True,
-).add_to(m)
-
-# Display the filtered map in Streamlit
-st.write(f"### Filtered Wildfire Map for the selected time range ({selected_time[0]} to {selected_time[1]})")
-st.map(m)
+    # **🔥 Step 6: Render the Full-Screen Map**
+    st_folium(m, height=800, width=1600)  # Increased size for full-screen effect
