@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
+import requests
+
+api_url = "http://localhost:8000/api/predict/"
 
 # Caching the CSV loading function for performance
 @st.cache
@@ -16,19 +19,22 @@ def load_csv(csv_file_path):
 def show():
     st.title("🌿 Part 2: Environmental Analysis")
 
-    # Path to the CSV file
-    csv_file_path = "C:\\Users\\Mahmu\\ConUHacksSAP\\ConUHacksSAPdjango\\predicted_wildfire_occurrences_with_location.csv"
+    # API call to get prediction data
+    response = requests.get(api_url)
 
-    # Step 1: Load the CSV data using caching
-    df = load_csv(csv_file_path)
-
-    # If CSV failed to load, return
-    if df is None:
+    # Check if the API call was successful
+    if response.status_code != 200:
+        st.error("Failed to fetch data from the API.")
         return
 
+    # Parse the JSON response
+    data = response.json()
+
+    # Convert JSON data to DataFrame
+    df = pd.DataFrame(data)
     # Check if the necessary columns (latitude and longitude) exist
     if 'latitude' not in df.columns or 'longitude' not in df.columns:
-        st.error("CSV must contain 'latitude' and 'longitude' columns.")
+        st.error("API response must contain 'latitude' and 'longitude' columns.")
         return
 
     # Step 2: Filter data for performance (e.g., showing only the first 100 rows)
@@ -39,19 +45,18 @@ def show():
     # Step 3: Create a Folium map centered on the first coordinate pair
     m = folium.Map(location=[df_subset['latitude'].iloc[0], df_subset['longitude'].iloc[0]], zoom_start=10)
 
-    # Step 4: Add a marker (pin) for each row in the filtered CSV data
+    # Step 4: Add a marker (pin) for each row in the filtered data
     for _, row in df_subset.iterrows():
         lat = row['latitude']
         lon = row['longitude']
-        predicted_fire = row['predicted_fire']
 
         # If 'predicted_fire' is 1, color the marker in red (for predicted fire)
-        marker_color = 'red' if predicted_fire == 1 else 'green'
+        marker_color = 'red'
 
         # Add marker with popup information
         folium.Marker(
             location=[lat, lon],
-            popup=f"Timestamp: {row['timestamp']}<br>Predicted Fire: {'Yes' if predicted_fire == 1 else 'No'}",
+            popup=f"Timestamp: {row['timestamp']}<br>Predicted Fire: Yes",
             icon=folium.Icon(color=marker_color, icon="info-sign")
         ).add_to(m)
 
