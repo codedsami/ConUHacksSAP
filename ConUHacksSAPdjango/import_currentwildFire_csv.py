@@ -2,19 +2,21 @@ import pandas as pd
 from pymongo import MongoClient
 
 # MongoDB Atlas Connection
-# uri = something from environment variables
+uri = "mongodb+srv://<user>:<pass>@cluster0.9cgk7mn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(uri)
 
 # Specify Database and Collection
 db = client['mydatabase']
 collection = db['backend_currentfireevents']
 
-# Read CSV File
-csv_file = 'wildfire.csv'  # Replace with your actual CSV file name
-df = pd.read_csv(csv_file, sep='\t')  # Assuming tab-separated values
+# Correct CSV reading with comma as the separator
+csv_file = 'wildfire.csv'
+df = pd.read_csv(csv_file, sep=',')  # Change sep from '\t' to ','
 
+# Add unique ID
 df['_id'] = range(1, len(df) + 1)
-# Convert DataFrame to Dictionary Format for MongoDB
+
+# Convert DataFrame to dictionary format for MongoDB
 data = df.to_dict(orient='records')
 
 # Insert Data into MongoDB
