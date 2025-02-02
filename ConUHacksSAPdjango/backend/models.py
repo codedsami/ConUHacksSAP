@@ -33,15 +33,29 @@ class CurrentFireEvents(models.Model):
 
     severity = models.CharField(max_length=10, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
 
-    @property
-    def damage_costs(self):
-        if self.severity == 'low':
-            return 50000
-        elif self.severity == 'medium':
-            return 100000
-        elif self.severity == 'high':
-            return 200000
-        return -1
-
     def __str__(self):
         return f"{self.timestamp} - {self.severity}"
+
+class HistoricalEnvironmentalData(models.Model):
+    timestamp = models.DateTimeField()
+    temperature = models.DecimalField(decimal_places=2, max_digits=5)
+    humidity = models.DecimalField(decimal_places=2, max_digits=5)
+    wind_speed = models.DecimalField(decimal_places=2, max_digits=5)
+    precipitation = models.DecimalField(decimal_places=2, max_digits=5)
+    vegetation_index = models.DecimalField(decimal_places=2, max_digits=5)
+    human_activity_index = models.DecimalField(decimal_places=2, max_digits=5)
+    latitude = models.DecimalField(decimal_places=6, max_digits=10, default=0)
+    longitude = models.DecimalField(decimal_places=6, max_digits=10,default=0)
+
+    def __str__(self):
+        return f"{self.timestamp} - Temp: {self.temperature}°C, Humidity: {self.humidity}%, Wind Speed: {self.wind_speed} m/s, Precipitation: {self.precipitation} mm, Vegetation Index: {self.vegetation_index}, Human Activity Index: {self.human_activity_index}, Location: ({self.latitude}, {self.longitude})"
+
+class HistoricalFireEvents(models.Model):
+    timestamp = models.DateTimeField()
+    fire_start_time = models.DateTimeField()
+    latitude = models.DecimalField(decimal_places=6, max_digits=10, default=0)
+    longitude = models.DecimalField(decimal_places=6, max_digits=10,default=0)
+    severity = models.CharField(max_length=10, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
+
+    def __str__(self):
+     return f"{self.timestamp} - {self.fire_start_time} - {self.latitude}, {self.longitude} - {self.severity}"
