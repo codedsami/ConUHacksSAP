@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from backend.algorithms import GREEDY_COST, optimize
-from .models import CurrentFireEvents, Resource
+from .models import CurrentFireEvents, PredictedFireEvents, Resource
 from rest_framework.parsers import FileUploadParser
 import csv
 import io
@@ -14,6 +14,12 @@ class FireEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = CurrentFireEvents
         fields = ['timestamp', 'fire_start_time', 'latitude', 'longitude', 'severity', 'damage_costs']
+
+class PredictedFireEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CurrentFireEvents
+        fields = ['timestamp', 'latitude', 'longitude']
+
 
 # Serializer for Resource model
 class ResourceSerializer(serializers.ModelSerializer):
@@ -58,6 +64,15 @@ def upload_fire_events(request):
         )
     return Response({'message': 'Fire events uploaded successfully'}, status=201)
 
+# API view to get all predicted fire events in JSON format
+@api_view(['GET'])
+def get_predicted_fire_events(request):
+    """
+    Fetch all predicted fire events from the database and return as JSON
+    """
+    predicted_fire_events = PredictedFireEvents.objects.all()
+    serializer = PredictedFireEventSerializer(predicted_fire_events, many=True)
+    return Response(serializer.data)
 
 # API view to get all resources in JSON format
 @api_view(['GET'])
